@@ -1,0 +1,53 @@
+.home-page {
+  width: 100%;
+  background-image: url("../home/image/CarPark.jpg");
+  background-size:100% 100%;
+}
+.title{
+  text-align: center;
+  font-weight: bold;
+  color: #fff;
+  font-size: 50px;
+  padding-top: 230px;
+}
+.search-box{
+  display: flex;
+  margin-left: 50%;
+  transform: translate(-50%, 30px);
+}
+.input{
+  height: 50px;
+  width: 520px;
+  border: none;
+  line-height: 16px;
+  border-radius: 5px;
+}
+input::-webkit-input-placeholder{
+  color: #aab2db;
+  font-size: 16px;
+  padding-left: 10px;
+}
+.btn{
+  background-color: #24b2f4;
+  border: none;
+  height: 50px;
+  width: 200px;
+  font-size: 20px;
+  color: #fff;
+  border-radius: 5px;
+  margin-left: 10px;
+  cursor: pointer;
+}
+.near-me{
+  background-color: #ff5b45;
+  width: 300px;
+  height: 50px;
+  margin-left: 50%;
+  border-radius: 10px;
+  transform: translate(-50%, 60px);
+  text-align: center;
+  color: #fff;
+  font-size: 20px;
+  line-height: 50px;
+  cursor: pointer;
+}
