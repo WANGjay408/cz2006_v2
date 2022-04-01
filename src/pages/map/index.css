@@ -6,3 +6,13 @@
     padding: 20px;
     display: flex;
 }
+.result-box{
+    display: flex;
+}
+.list{
+    width: 40%;
+}
+.google-map{
+    width: 1000px;
+    height: 600px;
+}

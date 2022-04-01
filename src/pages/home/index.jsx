@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import './index.css';
 import axios from "axios";
 import { Link } from 'react-router-dom';
+import { carparkList } from '../../store/carpark.js';
 
 const Home = () => {
     const height = window.innerHeight;
@@ -16,6 +17,7 @@ const Home = () => {
 
     useEffect(() => {
         getLotAvailability();
+        console.log(carparkList)
     }, []);
 
     return (
@@ -37,7 +39,7 @@ const Home = () => {
             </div>
             <div className='near-me'>
                 <Link to='/map-page'>
-                    <span>FIND PARKING NEAR ME</span>
+                    <span style={{ color: '#fff' }}>FIND PARKING NEAR ME</span>
                 </Link>
             </div>
         </section>
