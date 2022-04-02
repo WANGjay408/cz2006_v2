@@ -1,5 +1,5 @@
 import './index.css';
-import { Input } from 'antd';
+import { Button, Input } from 'antd';
 import { Tabs, Card } from 'antd';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { carparkList } from '../../store/carpark';
@@ -7,12 +7,10 @@ import axios from 'axios';
 import GoogleMapReact from 'google-map-react';
 import { Trans97 } from 'trans97';
 const trans97 = new Trans97({
-    type: 'wgs84'
+    type: 'twd97'
 });
 
 const { TabPane } = Tabs;
-
-const AnyReactComponent = ({ text }) => <div>{text}</div>;
 
 const MapPage = (props) => {
     const mapRef = useRef();
@@ -25,31 +23,52 @@ const MapPage = (props) => {
     }
 
     const [sortList, setSortList] = useState(null);
-    const [availableList, SetAvailableList] = useState(null)
+    const [availableList, SetAvailableList] = useState(null);
+    const [curDestination, setCurDestination] = useState(null);
+    const [startLocation, setStartLocation] = useState(null);
 
+
+    // get available carpark list
     const getLotAvailability = useCallback(async () => {
-        let response = await axios
-            .get("https://api.data.gov.sg/v1/transport/carpark-availability")
+        // let response = await axios
+        //     .get("https://api.data.gov.sg/v1/transport/carpark-availability")
+        //     .catch(err => console.log(err));
+        // SetAvailableList(response.data.items[0].carpark_data || []);
+        const id = await axios
+            .get("https://maps.googleapis.com/maps/api/geocode/json?address='BLOCK 253 ANG MO KIO STREET 21'&key=AIzaSyDev-eaJnkinc270zVj6sAAEvvH9yTD8_4")
             .catch(err => console.log(err));
-        SetAvailableList(response.data.items[0].carpark_data || [])
-        // console.log(response.data)
-    }, [SetAvailableList])
+        console.log(id)
+    }, [])
 
-    const initMap = useCallback(() => {
+    //init Map
+    const initMap = useCallback((des) => {
+        setCurDestination(des);
         if (mapRef.current && mapsRef.current) {
-            console.log(sortList)
             loadMapRoute(mapRef.current, mapsRef.current,
-                new mapsRef.current.LatLng(1.3378875, 103.8859798),
-                sortList[0].address
+                new mapsRef.current.LatLng(startLocation.latitude, startLocation.longitude),
+                des ? des.address : sortList[0].address
             )
         }
-    }, [sortList, mapRef, mapsRef])
+    }, [sortList, mapRef, mapsRef, startLocation])
+    //get current location
+    const getCurrentLocation = useCallback(() => {
+        var options = {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+        };
+        function success(pos) {
+            var crd = pos.coords;
+            setStartLocation(crd);
+        }
+        function error(err) {
+            console.warn(`ERROR(${err.code}): ${err.message}`);
+        }
+        navigator.geolocation.getCurrentPosition(success, error, options);
+    }, [])
 
-    useEffect(() => {
-        getLotAvailability();
-    }, [getLotAvailability]);
-
-    useEffect(() => {
+    //sort nearest carpark
+    const nearList = useCallback(() => {
         const data = carparkList.map(v => {
             return {
                 "y_coord": v['y_coord'],
@@ -58,11 +77,19 @@ const MapPage = (props) => {
                 "car_park_no": v['car_park_no'],
             }
         })
+
+        if (!startLocation) return null;
+
         var nearCarparks = data.map(v => {
-            const pow_1 = Math.pow((v['x_coord'] - 1.372702), 2)
-            const pow_2 = Math.pow((v['y_coord'] - 1.372702), 2)
+            const current = trans97.getLocation(
+                startLocation.latitude,
+                startLocation.longitude
+            );
+            // console.log(current, v);
+            const pow_1 = Math.pow((v['x_coord'] - current.x), 2)
+            const pow_2 = Math.pow((v['y_coord'] - current.y), 2)
             return {
-                dis: pow_1 + pow_2,
+                dis: Math.sqrt(pow_1 + pow_2),
                 "y_coord": v['y_coord'],
                 "x_coord": v['x_coord'],
                 "address": v['address'],
@@ -86,19 +113,32 @@ const MapPage = (props) => {
             }
             return arr;
         }
-        const value = selectionSort(nearCarparks).slice(0, 5)
+        const value = selectionSort(nearCarparks).slice(0, 5);
+
         setSortList(value.map(pos => {
             const posTransfered = trans97.getLocation(pos.x_coord, pos.y_coord)
             console.log(posTransfered)
             return {
                 ...pos,
-                lat: posTransfered.x,
-                lng: posTransfered.y
+                lat: posTransfered.x / 10000,
+                lng: posTransfered.y / 10000
             }
         }));
-        console.log(value)
+    }, [startLocation]);
 
+    const auto = useCallback(async (e) => {
+        await axios
+            .get(`https://maps.googleapis.com/maps/api/place/queryautocomplete/json?input=${e}&key=AIzaSyDev-eaJnkinc270zVj6sAAEvvH9yTD8_4`)
+            .catch(e => console.log(e))
+        // mapsRef.current.Autocomplete(input);
+        console.log('--')
     }, [])
+
+    useEffect(() => {
+        getLotAvailability();
+        nearList();
+        getCurrentLocation();
+    }, [getLotAvailability, nearList, getCurrentLocation]);
 
     if (sortList === null) {
         return null
@@ -108,18 +148,36 @@ const MapPage = (props) => {
         <section className="map-page" style={{ height: height }}>
             <div className='header'>
                 <Input
-                    placeholder='Choose Starting Point' />
-                <Input
-                    placeholder='Choose Ending Point' />
+                    id="locationTextField"
+                    placeholder='Choose Ending Point'
+                    onChange={(e) => auto(e.target.value)} />
+                <Button
+                    style={{
+                        marginLeft: '15px',
+                        background: '#1990ff',
+                        color: 'white',
+                        borderRadius: '10px',
+                        border: 'none'
+                    }}
+                >Search</Button>
             </div>
             <div className='result-box'>
                 <div className='list'>
                     <div>
-                        <Tabs defaultActiveKey="1" onChange={callback}>
+                        <Tabs
+                            defaultActiveKey="1"
+                            onChange={callback}
+                            style={{ padding: '0 10px', height: '650px', overflow: 'scroll' }}
+                        >
                             <TabPane tab="Nearest 5 Carparks" key="1">
                                 {sortList.length > 0 && sortList.map((v, t) => {
                                     return <div style={{ marginTop: '20px' }}>
-                                        <Card title={v["address"]} key={t}>
+                                        <Card
+                                            className={curDestination === v ? 'active card' : 'card'}
+                                            title={v["address"]}
+                                            key={t}
+                                            onClick={() => initMap(v)}
+                                        >
                                             <p>{v['address']}</p>
                                             <p>{v['car_park_no']}</p>
                                         </Card>
@@ -127,17 +185,22 @@ const MapPage = (props) => {
                                 })
                                 }
                             </TabPane>
-                            <TabPane tab="Avalible" key="2">
-                                {sortList.length > 0 && sortList.map((v, t) => {
-                                    return <div style={{ margin: '20px ' }}>
-                                        <Card title={v["address"]} key={t}>
-                                            <p>{v['address']}</p>
-                                            <p>{v['car_park_no']}</p>
+                            {/* <TabPane tab="Avalible Carparks" key="2">
+                                {availableList.length > 5 && availableList.slice(0, 5).map((v, t) => {
+                                    return <div style={{ marginTop: '20px' }}>
+                                        <Card
+                                            className={curDestination === v ? 'active card' : 'card'}
+                                            title={v["carpark_number"]}
+                                            key={t}
+                                            onClick={() => initMap(v)}
+                                        >
+                                            <p>{v['carpark_number']}</p>
+
                                         </Card>
                                     </div>
                                 })
                                 }
-                            </TabPane>
+                            </TabPane> */}
                         </Tabs>
                     </div>
                 </div>
@@ -145,8 +208,8 @@ const MapPage = (props) => {
                     <GoogleMapReact
                         bootstrapURLKeys={{ key: 'AIzaSyDev-eaJnkinc270zVj6sAAEvvH9yTD8_4' }}
                         defaultCenter={{
-                            lat: 1.3378875,
-                            lng: 103.8859798
+                            lat: startLocation.latitude,
+                            lng: startLocation.longitude,
                         }}
                         defaultZoom={11}
                         yesIWantToUseGoogleMapApiInternals
@@ -155,6 +218,7 @@ const MapPage = (props) => {
                             mapsRef.current = maps;
                             initMap();
                         }}
+                        onClick={(e) => console.log(e)}
                     />
                 </section>
             </div>
@@ -216,6 +280,6 @@ function computeTotalDistance(result) {
     }
 
     total = total / 1000;
-    console.log(total)
+    // console.log(total)
     // document.getElementById("total").innerHTML = total + " km";
 }
