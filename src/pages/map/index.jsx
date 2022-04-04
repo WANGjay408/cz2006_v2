@@ -2,7 +2,7 @@ import './index.css';
 import { Button, Input } from 'antd';
 import { Tabs, Card } from 'antd';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { carparkList } from '../../store/carpark';
+import { carparkList } from '../../store/carparkList';
 import axios from 'axios';
 import GoogleMapReact from 'google-map-react';
 
@@ -36,13 +36,16 @@ const MapPage = (props) => {
     //init Map
     const initMap = useCallback((des) => {
         setCurDestination(des);
+        const endAdr = typeof des === 'undefined' ? sortList[0] : des;
         if (mapRef.current && mapsRef.current) {
-            loadMapRoute(mapRef.current, mapsRef.current,
+            loadMapRoute(
+                mapRef.current,
+                mapsRef.current,
                 new mapsRef.current.LatLng(startLocation.latitude, startLocation.longitude),
-                curDestination ? curDestination.address : sortList[0].address
+                new mapsRef.current.LatLng(endAdr['x_coord'], endAdr['y_coord'])
             )
         }
-    }, [sortList, mapRef, mapsRef, startLocation, curDestination])
+    }, [sortList, mapRef, mapsRef, startLocation])
     //get current location
     const getCurrentLocation = useCallback(() => {
         var options = {
@@ -76,16 +79,7 @@ const MapPage = (props) => {
         if (!startLocation) return null;
 
         var nearCarparks = data.map(v => {
-            // const current = trans97.getLocation(
-            //     startLocation.latitude,
-            //     startLocation.longitude
-            // );
-            // console.log('current', startLocation);
             let endLocation = end ? end : startLocation;
-            // const dis = CoolWPDistance(v['x_coord'], v['y_coord'], endLocation.longitude, endLocation.latitude)
-            // const pow_1 = Math.pow((v['x_coord'] - endLocation.latitude), 2)
-            // const pow_2 = Math.pow((v['y_coord'] - endLocation.longitude), 2)
-            // console.log(v, '12312312312312', endLocation)
             const dis = GetDistance(v['x_coord'], v['y_coord'], endLocation.latitude, endLocation.longitude)
             return {
                 dis: dis,
@@ -113,50 +107,25 @@ const MapPage = (props) => {
             return arr;
         }
         const value = selectionSort(nearCarparks).slice(0, 5);
-
         setSortList(value);
     }, [startLocation]);
     //get lat lng 
     const getLatLng = useCallback(async (address) => {
-        // console.log(address)
-        // if (!address) return;
         const id = await axios
             .get(`https://maps.googleapis.com/maps/api/geocode/json?address='${address}'&key=AIzaSyDev-eaJnkinc270zVj6sAAEvvH9yTD8_4`)
             .catch(err => console.log(err));
-        console.log(id)
-        // if (!id) return;
+
         const end = {
             address: id.data.results[0].formatted_address,
             latitude: id.data.results[0].geometry.location.lat,
             longitude: id.data.results[0].geometry.location.lng,
         }
-        console.log(end, 'end')
-        initMap();
         nearList(end);
+        initMap();
     }, [nearList, initMap])
-    // const auto = useCallback(async (e) => {
-    //     await axios
-    //         .get(`https://maps.googleapis.com/maps/api/place/queryautocomplete/json?input=${e}&key=AIzaSyDev-eaJnkinc270zVj6sAAEvvH9yTD8_4`)
-    //         .catch(e => console.log(e))
-    // mapsRef.current.Autocomplete(input);
-    // console.log('--')
-    // }, [])
 
     useEffect(() => {
         getLotAvailability();
-        // var data = {
-        //     resource_id: '139a3035-e624-4f56-b63f-89ae28d4ae4c', // the resource id
-        //     limit: 5, // get 5 results
-        //     q: 'jones' // query for 'jones'
-        //   };
-        //   $.ajax({
-        //     url: 'https://data.gov.sg/api/action/datastore_search',
-        //     data: data,
-        //     dataType: 'jsonp',
-        //     success: function(data) {
-        //       alert('Total results found: ' + data.result.total)
-        //     }
-        //   });
         nearList();
         getCurrentLocation();
     }, [nearList, getCurrentLocation, getLotAvailability]);
@@ -171,7 +140,7 @@ const MapPage = (props) => {
                 <Input
                     id="locationTextField"
                     placeholder='Choose Ending Point'
-                    onChange={(e) => { setEndLocation(e.target.value); console.log(e.target.value) }} />
+                    onChange={(e) => { setEndLocation(e.target.value) }} />
                 <Button
                     style={{
                         marginLeft: '15px',
@@ -274,10 +243,11 @@ function loadMapRoute(map, maps, origin, destination) {
 }
 
 function displayRoute(origin, destination, service, display, maps) {
+    console.log(origin, destination)
     service
         .route({
             origin: origin,
-            destination: destination,
+            destination: destination, //destination,
             travelMode: maps.TravelMode.DRIVING,
             avoidTolls: true,
         })
@@ -302,48 +272,8 @@ function computeTotalDistance(result) {
     }
 
     total = total / 1000;
-    // console.log(total)
     // document.getElementById("total").innerHTML = total + " km";
 }
-
-function getRad(d) {
-    var PI = Math.PI;
-    return d * PI / 180.0;
-}
-function CoolWPDistance(lng1, lat1, lng2, lat2) {
-    var f = getRad((lat1 + lat2) / 2);
-    var g = getRad((lat1 - lat2) / 2);
-    var l = getRad((lng1 - lng2) / 2);
-    var sg = Math.sin(g);
-    var sl = Math.sin(l);
-    var sf = Math.sin(f);
-    var s, c, w, r, d, h1, h2;
-    var a = 6378137.0;//The Radius of eath in meter.
-    var fl = 1 / 298.257;
-    sg = sg * sg;
-    sl = sl * sl;
-    sf = sf * sf;
-    s = sg * (1 - sl) + (1 - sf) * sl;
-    c = (1 - sg) * (1 - sl) + sf * sl;
-    w = Math.atan(Math.sqrt(s / c));
-    r = Math.sqrt(s * c) / w;
-    d = 2 * w * a;
-    h1 = (3 * r - 1) / 2 / c;
-    h2 = (3 * r + 1) / 2 / s;
-    s = d * (1 + fl * (h1 * sf * (1 - sg) - h2 * (1 - sf) * sg));
-    if (s >= 1000 && s <= 99000) {
-        var kilometer = s / 1000;
-        s = kilometer.toFixed(1) + 'km';
-    } else if (s > 99000) {
-        s = '>99km';
-    } else {
-        s = Math.round(s) + 'm';
-    }
-    // s = s/1000;
-    // s = s.toFixed(2);//指定小数点后的位数。
-    return s;
-}
-
 function GetDistance(lat1, lng1, lat2, lng2) {
     var radLat1 = lat1 * Math.PI / 180.0;
     var radLat2 = lat2 * Math.PI / 180.0;
