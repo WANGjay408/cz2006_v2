@@ -123,7 +123,7 @@ const MapPage = (props) => {
             return
         }
         if (typeof parseInt(address) === 'number') {
-            if (address > 810000 || address < 10000) {
+            if (address >= 810000 || address < 10000) {
                 console.log(parseInt(address), 'id')
                 alert('Please Enter Right Address in Singapore')
                 return
@@ -175,7 +175,7 @@ const MapPage = (props) => {
                             onChange={callback}
                             style={{ padding: '0 10px', height: '650px', overflow: 'scroll' }}
                         >
-                            <TabPane tab="Rank by Carpark Availability" key="1">
+                            <TabPane tab="AVAILABILITY" key="1">
                                 {sortList.length > 0 && sortList.map((v, t) => {
                                     return <div style={{ marginTop: '20px' }}>
                                         <Card
@@ -198,22 +198,29 @@ const MapPage = (props) => {
                                 })
                                 }
                             </TabPane>
-                            {/* <TabPane tab="Avalible Carparks" key="2">
-                                {availableList.length > 5 && availableList.slice(0, 5).map((v, t) => {
+                            <TabPane tab="NEAREST" key="1">
+                                {sortList.length > 0 && sortList.map((v, t) => {
                                     return <div style={{ marginTop: '20px' }}>
                                         <Card
                                             className={curDestination === v ? 'active card' : 'card'}
-                                            title={v["carpark_number"]}
+                                            title={
+                                                <div style={{ display: 'flex' }}>
+                                                    <div style={{ flex: 1 }}>{v["address"]}</div>
+                                                    <div onClick={() => window.open(`https://www.google.com/maps/dir/${v["address"]}`)}>
+                                                        <SendOutlined />
+                                                    </div>
+                                                </div>
+                                            }
                                             key={t}
                                             onClick={() => initMap(v)}
                                         >
-                                            <p>{v['carpark_number']}</p>
-
+                                            <p>{v['address']}</p>
+                                            <p>{v['car_park_no']}</p>
                                         </Card>
                                     </div>
                                 })
                                 }
-                            </TabPane> */}
+                            </TabPane>
                         </Tabs>
                     </div>
                 </div>
