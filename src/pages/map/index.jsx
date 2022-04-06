@@ -125,16 +125,11 @@ const MapPage = (props) => {
         if (typeof parseInt(address) === 'number') {
             if (address > 810000 || address < 10000) {
                 console.log(parseInt(address), 'id')
-
                 alert('Please Enter Right Address in Singapore')
                 return
             }
         }
-        if (id.data.results[0].address_components[5].long_name > 810000 || id.data.results[0].address_components[5].long_name < 10000) {
-            alert('Please Enter Right Address in Singapore')
-            return
-        }
-
+        console.log('------')
         const end = {
             address: id.data.results[0].formatted_address,
             latitude: id.data.results[0].geometry.location.lat,
