@@ -118,11 +118,23 @@ const MapPage = (props) => {
         const id = await axios
             .get(`https://maps.googleapis.com/maps/api/geocode/json?address='${address}'&key=AIzaSyDev-eaJnkinc270zVj6sAAEvvH9yTD8_4`)
             .catch(err => console.log(err));
-
         if (id.data.results.length === 0) {
             alert('Please Enter Right Address')
             return
         }
+        if (typeof parseInt(address) === 'number') {
+            if (address > 810000 || address < 10000) {
+                console.log(parseInt(address), 'id')
+
+                alert('Please Enter Right Address in Singapore')
+                return
+            }
+        }
+        if (id.data.results[0].address_components[5].long_name > 810000 || id.data.results[0].address_components[5].long_name < 10000) {
+            alert('Please Enter Right Address in Singapore')
+            return
+        }
+
         const end = {
             address: id.data.results[0].formatted_address,
             latitude: id.data.results[0].geometry.location.lat,
