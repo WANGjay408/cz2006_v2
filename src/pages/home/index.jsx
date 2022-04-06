@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import './index.css';
-import axios from "axios";
 import { Link } from 'react-router-dom';
 
 const Home = () => {
@@ -27,8 +26,12 @@ const Home = () => {
                     placeholder='Search Place, Postol Code or District'
                     onChange={(e) => setEndLoaction(e.target.value)}
                 />
-                <button className='btn' onClick={() => { }}>
-                    Find Parking
+                <button className='btn'>
+                    <Link to={`/map-page`}>
+                        <span style={{ color: '#fff' }}>
+                            Find Parking
+                        </span>
+                    </Link>
                 </button>
             </div>
             <div className='near-me'>

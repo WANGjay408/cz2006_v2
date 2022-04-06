@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { carparkList } from '../../store/carparkList';
 import axios from 'axios';
 import GoogleMapReact from 'google-map-react';
+import { SendOutlined } from '@ant-design/icons';
 
 const { TabPane } = Tabs;
 
@@ -36,7 +37,10 @@ const MapPage = (props) => {
     //init Map
     const initMap = useCallback((des) => {
         setCurDestination(des);
-        const endAdr = typeof des === 'undefined' ? sortList[0] : des;
+        const endAdr = typeof des === 'undefined' ? {
+            'x_coord': startLocation.latitude,
+            'y_coord': startLocation.longitude
+        } : des;
         if (mapRef.current && mapsRef.current) {
             loadMapRoute(
                 mapRef.current,
@@ -45,7 +49,7 @@ const MapPage = (props) => {
                 new mapsRef.current.LatLng(endAdr['x_coord'], endAdr['y_coord'])
             )
         }
-    }, [sortList, mapRef, mapsRef, startLocation])
+    }, [mapRef, mapsRef, startLocation])
     //get current location
     const getCurrentLocation = useCallback(() => {
         var options = {
@@ -115,6 +119,10 @@ const MapPage = (props) => {
             .get(`https://maps.googleapis.com/maps/api/geocode/json?address='${address}'&key=AIzaSyDev-eaJnkinc270zVj6sAAEvvH9yTD8_4`)
             .catch(err => console.log(err));
 
+        if (id.data.results.length === 0) {
+            alert('Please Enter Right Address')
+            return
+        }
         const end = {
             address: id.data.results[0].formatted_address,
             latitude: id.data.results[0].geometry.location.lat,
@@ -160,12 +168,19 @@ const MapPage = (props) => {
                             onChange={callback}
                             style={{ padding: '0 10px', height: '650px', overflow: 'scroll' }}
                         >
-                            <TabPane tab="Nearest 5 Carparks" key="1">
+                            <TabPane tab="Rank by Carpark Availability" key="1">
                                 {sortList.length > 0 && sortList.map((v, t) => {
                                     return <div style={{ marginTop: '20px' }}>
                                         <Card
                                             className={curDestination === v ? 'active card' : 'card'}
-                                            title={v["address"]}
+                                            title={
+                                                <div style={{ display: 'flex' }}>
+                                                    <div style={{ flex: 1 }}>{v["address"]}</div>
+                                                    <div onClick={() => window.open(`https://www.google.com/maps/dir/${v["address"]}`)}>
+                                                        <SendOutlined />
+                                                    </div>
+                                                </div>
+                                            }
                                             key={t}
                                             onClick={() => initMap(v)}
                                         >
@@ -249,7 +264,6 @@ function displayRoute(origin, destination, service, display, maps) {
             origin: origin,
             destination: destination, //destination,
             travelMode: maps.TravelMode.DRIVING,
-            avoidTolls: true,
         })
         .then((result) => {
             display.setDirections(result);
