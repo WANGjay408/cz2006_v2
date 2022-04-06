@@ -171,7 +171,7 @@ const MapPage = (props) => {
                 <div className='list'>
                     <div>
                         <Tabs
-                            defaultActiveKey="1"
+                            defaultActiveKey="2"
                             onChange={callback}
                             style={{ padding: '0 10px', height: '650px', overflow: 'scroll' }}
                         >
@@ -198,7 +198,7 @@ const MapPage = (props) => {
                                 })
                                 }
                             </TabPane>
-                            <TabPane tab="NEAREST" key="1">
+                            <TabPane tab="CLOSEST" key="1">
                                 {sortList.length > 0 && sortList.map((v, t) => {
                                     return <div style={{ marginTop: '20px' }}>
                                         <Card
