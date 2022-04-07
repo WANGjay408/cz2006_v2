@@ -15,7 +15,7 @@
 }
 .google-map{
     width: 1000px;
-    height: 700px;
+    height: 1000px;
 }
 .card{
     border: 1px solid #0195bc;
@@ -26,4 +26,14 @@
 .active{
     background: #0095bc7a;
     color: white;
+}
+
+.example {
+    height: 100%;
+    width: 100%;
+    margin: 20px 0;
+    margin-bottom: 20px;
+    padding: 30px 50px;
+    text-align: center;
+    border-radius: 4px;
 }

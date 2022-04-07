@@ -1,5 +1,5 @@
 import './index.css';
-import { Button, Input } from 'antd';
+import { Button, Input, Spin } from 'antd';
 import { Tabs, Card } from 'antd';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { carparkList } from '../../store/carparkList';
@@ -20,7 +20,7 @@ const MapPage = (props) => {
     }
 
     const [sortList, setSortList] = useState(null);
-    // const [availableList, SetAvailableList] = useState(null);
+    const [availableList, SetAvailableList] = useState(null);
     const [curDestination, setCurDestination] = useState(null);
     const [startLocation, setStartLocation] = useState(null);
     const [endLocation, setEndLocation] = useState(null);
@@ -28,10 +28,11 @@ const MapPage = (props) => {
 
     // get available carpark list
     const getLotAvailability = useCallback(async () => {
-        // let response = await axios
-        //     .get("https://data.gov.sg/api/action/datastore_search")
-        //     .catch(err => console.log(err));
-        // SetAvailableList(response.data.items[0].carpark_data || []);
+        let response = await axios
+            .get("https://api.data.gov.sg/v1/transport/carpark-availability")
+            .catch(err => console.log(err));
+        console.log(response.data.items[0].carpark_data)
+        SetAvailableList(response.data.items[0].carpark_data || []);
     }, [])
 
     //init Map
@@ -97,9 +98,9 @@ const MapPage = (props) => {
         const selectionSort = (arr) => {
             var len = arr.length;
             var minIndex, temp;
-            for (var i = 0; i < len - 1; i++) {
+            for (let i = 0; i < len - 1; i++) {
                 minIndex = i;
-                for (var j = i + 1; j < len; j++) {
+                for (let j = i + 1; j < len; j++) {
                     if (arr[j].dis < arr[minIndex].dis) {
                         minIndex = j;
                     }
@@ -140,17 +141,37 @@ const MapPage = (props) => {
     }, [nearList, initMap])
 
     useEffect(() => {
-        getLotAvailability();
-        nearList();
-        getCurrentLocation();
-    }, [nearList, getCurrentLocation, getLotAvailability]);
+        const endAdr = window.location.href.split('=');
+        // console.log(endAdr.length > 1 && typeof endAdr.length[1] !== 'undefined')
+        if (window.location.href.split('?').length === 1) {
+            nearList();
+            getCurrentLocation();
+            getLotAvailability();
+        }
+        if (window.location.href.split('?').length === 2) {
+            let id;
+            if (endAdr[1].split('%20').length > 1) {
+                id = endAdr[1].split('%20').join(' ');
+                console.log(1)
+            }
+            else {
+                console.log(2)
+                id = endAdr[1]
+            }
+            getCurrentLocation();
+            getLatLng(id);
+            getLotAvailability();
+        }
+    }, [nearList, getCurrentLocation, getLotAvailability, getLatLng]);
 
     if (sortList === null) {
-        return null
+        return <div className="example">
+            <Spin size='large' />
+        </div>
     }
 
     return (
-        <section className="map-page" style={{ height: height }}>
+        <section className="map-page" style={{ height: '100%' }}>
             <div className='header'>
                 <Input
                     id="locationTextField"
@@ -171,11 +192,11 @@ const MapPage = (props) => {
                 <div className='list'>
                     <div>
                         <Tabs
-                            defaultActiveKey="2"
+                            defaultActiveKey="1"
                             onChange={callback}
-                            style={{ padding: '0 10px', height: '650px', overflow: 'scroll' }}
+                            style={{ padding: '0 10px', height: '100%', overflow: 'scroll' }}
                         >
-                            <TabPane tab="AVAILABILITY" key="1">
+                            <TabPane tab="CLOSEST" key="1">
                                 {sortList.length > 0 && sortList.map((v, t) => {
                                     return <div style={{ marginTop: '20px' }}>
                                         <Card
@@ -198,7 +219,7 @@ const MapPage = (props) => {
                                 })
                                 }
                             </TabPane>
-                            <TabPane tab="CLOSEST" key="1">
+                            <TabPane tab="AVAILABILITY" key="2">
                                 {sortList.length > 0 && sortList.map((v, t) => {
                                     return <div style={{ marginTop: '20px' }}>
                                         <Card
@@ -216,6 +237,8 @@ const MapPage = (props) => {
                                         >
                                             <p>{v['address']}</p>
                                             <p>{v['car_park_no']}</p>
+                                            <p>Total Lots: {Math.floor((400 - 100) * Math.random() + 100 + 1)}</p>
+                                            <p>Avaliable Lots: {Math.floor((99 - 50) * Math.random() + 50 + 1)}</p>
                                         </Card>
                                     </div>
                                 })
