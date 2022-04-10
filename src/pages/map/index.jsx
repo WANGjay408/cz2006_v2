@@ -172,6 +172,14 @@ const MapPage = (props) => {
 
     return (
         <section className="map-page" style={{ height: '100%' }}>
+            <div style={{
+                position: 'absolute',
+                top: '-6px',
+                fontWeight: '900',
+                fontSize: '40px',
+                color: '#0095bc',
+                left: '10px'
+            }}>PARKGO</div>
             <div className='header'>
                 <Input
                     id="locationTextField"
